@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "storage2": {
+      "restored": true,
+      "restoreTime": "2023-08-20T08:43:11.5028449Z"
+    },
+    "secrets1": {
+      "restored": true,
+      "restoreTime": "2023-08-20T08:42:39.1513312Z"
+    },
+    "storage1": {
+      "restored": true,
+      "restoreTime": "2023-08-20T08:39:23.7898482Z"
+    },
+    "appInsights1": {
+      "restored": true,
+      "restoreTime": "2023-08-20T08:39:23.7589653Z"
+    }
+  },
+  "parameters": {
+    "storage2.resourceGroupName": {
+      "Name": "storage2.resourceGroupName",
+      "Type": "resourceGroup",
+      "Value": "ahaa-rg"
+    },
+    "storage2.subscriptionId": {
+      "Name": "storage2.subscriptionId",
+      "Type": "subscription",
+      "Value": "7cbe6e89-b1b6-43d6-944b-fffb444bb4de"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "IsEncrypted": false,
+  "ConnectionStrings": {
+    "BlobConnectionString": ""
+  },
+    "Values": {
+      "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+      "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+      "AZURE_SEARCH_SERVICE_ENDPOINT": "",
+      "AZURE_SEARCH_INDEX_NAME": "resume-index",
+      "AZURE_SEARCH_ADMIN_KEY": "",
+      "AZURE_OPENAI_ENDPOINT": "",
+      "AZURE_OPENAI_API_KEY": "",
+      "AZURE_OPENAI_API_VERSION": "2023-07-01-Preview",
+      "AZURE_OPENAI_EMBEDDING_DEPLOYED_MODEL": "vector-embedding-deployment",
+      "VECTOR_SEARCH_CONFIG": "ahaa-vector-config",
+      "MODEL_DIMENSION": "1536",
+      "SEMANTIC_CONFIG": "ahaa-semantic-config"
+    }
+  }
