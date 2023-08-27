@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/AHAApi/.vs
+/AHAApi/AHAApi/bin/Debug/net6.0
+/AHAApi/AHAApi/obj
+/ResumeMetadataGenerator/obj/Release/net6.0
+/ResumeMetadataGenerator/obj/Debug/net6.0
