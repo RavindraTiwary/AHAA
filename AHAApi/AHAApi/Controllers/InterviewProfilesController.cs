@@ -1,4 +1,5 @@
 ﻿using AHAApi.DataModels;
+using AHAApi.Helper;
 using AHAApi.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,9 @@ namespace AHAApi.Controllers
         public async Task<ActionResult<bool>> Post(InterviewProfiles profile)
         {
             await _repository.CreateAsync(profile);
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            EmailHelper emailHelper = new EmailHelper();
+            emailHelper.EmailUser(profile);
             return Ok(true);
         }
 
@@ -43,6 +47,9 @@ namespace AHAApi.Controllers
         public async Task<ActionResult<IEnumerable<InterviewProfiles>>> Update(InterviewProfiles profile)
         {
             await _repository.UpdateAsync(profile);
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            EmailHelper emailHelper = new EmailHelper();
+            emailHelper.EmailUser(profile);
             return Ok(true);
         }
 
