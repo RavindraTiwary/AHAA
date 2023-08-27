@@ -7,7 +7,7 @@ namespace AHAApi.DataModels
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         public string? JobId { get; set; }
         public string? JobTitle { get; set; }
