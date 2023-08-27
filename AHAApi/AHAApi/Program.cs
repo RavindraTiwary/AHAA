@@ -31,6 +31,7 @@ builder.Services.AddSingleton<IMongoDatabase>(provider =>
     return client.GetDatabase(configuration.GetSection("CosmosDBSettings")["DatabaseName"]);
 });
 builder.Services.AddScoped<InterviewProfilesRepository>();
+builder.Services.AddScoped<JobPostingRepository>();
 // Register Cosmos DB connection
 builder.Services.AddSingleton<IMongoClient>(provider =>
 {
@@ -45,6 +46,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+else
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "AHAA-API");
+    });
 }
 
 app.UseCors("AllowLocalClient");
