@@ -1,16 +1,21 @@
 ﻿using AHAApi.DataModels;
 using AHAApi.Model;
 using Azure.Core;
+using MongoDB.Bson.IO;
+using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
+using JsonConvert = Newtonsoft.Json.JsonConvert;
 
 namespace AHAApi.Helper
 {
     public class EmailHelper
     {
         private string accessToken;
+        private string accessTokenOnlineMeeting;
         public EmailHelper()
         {
-            accessToken = "EwCgA8l6BAAUAOyDv0l6PcCVu89kmzvqZmkWABkAAaFx8b8CIkdSRRhBPm0Jw51c33oTT0glG2GB/IhH8onK1nKeJzSlg2ciyDtkuEWx2kRVZby5XNipjKlyo5jOAgoFXkjtKaD7tJhsn3Ad3f9+0IiUfnuXwLztkHq5bA/MRj4d8Mi/B9Q7NYuQOcvIRmMERU2LD3Lwt3ifkfh0ky1rny5LOpYl35SFoQKyiHRaIsK+sqMowGQwBSfV0zMc2uO3q2J+1sapX6Lnv6GUP4c18IAX4697WySerSnYUUmEKYPQJbXzZx6sPmwvDbEBGzLaTrTUaJiVyzDvtYiQBsjUMhb8XiiCxlbuc7updDPr6cUW+oRhnpa9czU1lJ2j/Y4DZgAACCid7h7uUpP4cAJYp4H4dJDtU8YmuacftOWcnuHjP7RRt+Nbe6iyNWFlV98QMML9Z5B3r0+U3zkxp4c2fZZVwtAsHSb8SgcodFc75/86wriF5mGdxT2BON/8ZO0hG7kGIHdKjeE69yE0IvD/sJSBN18DK1JxLhqDdvW6L9oHCO6g4NksSumoyAiGQxDJTSfajYSQ1qEpxMAnzMdKqLJDfSuO8cisLCYZxR6KcY3OGaEYNjlc53tmRzo/zp0OnuBoAPYuz9oR3N1JVE0rO4h19ZZ1yTEEztm4H8ezHbrkjDuS2Nj9NZXXQRQuMKd+Va2OviCTkVhbHsw1kQXbX1lOQBiMjMhBut7k8hH4/Yt0/iHF7J59zV+MMMoAnEE99QxQaA5yw0vYxZajUd8whqY3aK//1XTGZruCs4XB0pIs1on+OWX1ee4pmtogrAHY8pPfmSNTNM2uR4g8UVzZ0Wvr76iFsU4PbxR24cq3WFMNw4HaD6JxH/or+loZpbQEyVdc8VZoxVdSMY5iVQANdPeNFcEIgNdzl1SL2mLOfVEdbXSmEEuxUoF8FvskHpW+WVoh6qbk8nBvrpcesoZRfbFZLwen/CwkFzywXy/k+gL3sdPW/SXFzaixY6pbytJrI/V1vAXUTpXlzXX6dlLbPTiz5ZJyeO7XEyJcOz94v2vvuynBSXve58Z16St8+2TultKohBfmyuJ0d9QsCpWSDLxj5/WziF22Jriq08jkuQlwqgQbvX1dw6Hn9gsazT6LCMkIILlFwZ5MSXjpZG28jzT27RAEAqqmUYp+4HH7ZZsEBxI90p3kcCIkx/OP6iJpcBTxkLqi7mOSqw/pvIGlAg==";
+            accessToken = "EwCoA8l6BAAUAOyDv0l6PcCVu89kmzvqZmkWABkAAWR6+bN+PXLedTTPzH4ecW5gOvzTLiKkUPUQ0fHRRuKHV5GcFUaK34UgZPkiqV7RKrLHW7Z+WWvo7h4Fpu00g+Lx2P6x5Ht7DbFNLnsM4Vsq4HUeVYC+F0lwFvOkDuuroGLHqcYGUgVIg1Bwh2wPDqQE77eYsJkB4LUW9heh6mHvWRRtQSfOpFGeEEZwivC5wN/iX+LosFuaMuueuH5i2l5rxIGLDXE6JVvTqG8xYjoaSxUbOmka3cf7pQbKUZU0YHPcdMGyojnFK3b3/raBO3SJSTPo4Jhko4IEYsCV5Ok055mtcXvCoCqYX3idkMThZ+UHSLbWk+d4zif6rSE+sQ0DZgAACNeKxsohSbhueAJjKpKtUEmjrQBfDe6PMHtTE6YSQmNe6qelMzjuV3gYD1DuoAd5540VAL5hZ3n9U3n9OIrLq9C2+OoLOS2YGIGJzQuNYp0CwCd7zEf9l9sFY4lwjnUtPFR58TgTDnXgFbVCkygUAMrHoaKAEkW1wuAlrsfGOV67n9Z8j/BtFXqMlj3edolK9CKHUUrp09k88s34r4QapLonnckuGF2Cgx4804qBDMysm+e/C94qgavpYWm2u+eF6grrE0ZxtjC0796pQNSfw9Sg0OgD2XLfjXyXgaBvwrccADLEvO5IV7jgyJm7bOT/viPdh57cJfqCahrEFBU1TYq1qqPnLRc+NwzKrn+AtiVS3btbEK71hDEjk12Gh1V1jIanYKGIMs9x2tR0e2auXa1tRN8OHMsz6UaqR9w684SdXAWxOxkfp7175CjLMJVzp+br15dR7GD3ycNi+cgCDcVYosE0/jJmCS9mKAE4Xyf5THkFPhQRMWDJ3NMJWkPqDPk3wVixmIJfMk/188OeCBYzQFOWmc8PtAppTklN3E3anikpRakFSbSppElZsBvyPj5lpd+fddiYOXH5953IBmFt4SY3CBgSG/ElwbSlEvONYKz/lLybQwMczAIzH3j4ArqdKgQF3PUHulHd2HwByyEblUafUXDxhUtKYriiosq6lXI7KJa59fNYGQEH8Gfh0277R+ZOBsiSHNMr7MmUABg33WDNY3z2jDzdyzDe67+c9x8BgoECznIDEnVnd1p+/yEi1OknlYfRdZRxbmUm8N8GJQic4RDaAP1hPjBgQFiMvYyK594VIQQ9Go8mWJU8gk7r7Zl3IiAu0Lx0xcjPA/NK2qkC";
+            accessTokenOnlineMeeting = "eyJ0eXAiOiJKV1QiLCJub25jZSI6IldCcVB5ODRFV0ZnVXpOWndXclZSYXQxWS1TZEQwT1RlTWlJLUxMSmloYXMiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9kOTE0ZmE1Yy0wNzYwLTQ2MGQtYTA1Ni1hYzhhNzdhODdmZGEvIiwiaWF0IjoxNjkzOTgwMDc0LCJuYmYiOjE2OTM5ODAwNzQsImV4cCI6MTY5NDA2Njc3NCwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkFWUUFxLzhVQUFBQURydDZBLzlOam9DQ0srTll6Zk41OFdpMGgvSEd2cHkvRGxRNGZMNEY0RnlIOEY5UzM0c0ErUzRwS01Qbk0xbkNjS3ViSldiY1JYNU9vZHJTYzY5bXorY0pZYjd1ZGtwcUhqTWMyU2o4TTJzPSIsImFtciI6WyJwd2QiLCJtZmEiXSwiYXBwX2Rpc3BsYXluYW1lIjoiR3JhcGggRXhwbG9yZXIiLCJhcHBpZCI6ImRlOGJjOGI1LWQ5ZjktNDhiMS1hOGFkLWI3NDhkYTcyNTA2NCIsImFwcGlkYWNyIjoiMCIsImZhbWlseV9uYW1lIjoiQWRtaW5pc3RyYXRvciIsImdpdmVuX25hbWUiOiJTeXN0ZW0iLCJpZHR5cCI6InVzZXIiLCJpcGFkZHIiOiIyNDA0OmY4MDE6ODAyODoxOmRhY2Y6ZWQwZjo1YTliOjYzNmIiLCJuYW1lIjoiU3lzdGVtIEFkbWluaXN0cmF0b3IiLCJvaWQiOiJjMDFhY2VmOS1kYWU0LTQ1OWEtODRhOC1iYzc0M2Q3NTQwM2MiLCJwbGF0ZiI6IjMiLCJwdWlkIjoiMTAwMzIwMDJEOTE4QzNEQyIsInJoIjoiMC5BYmNBWFBvVTJXQUhEVWFnVnF5S2Q2aF8yZ01BQUFBQUFBQUF3QUFBQUFBQUFBQzNBSzQuIiwic2NwIjoiQ2FsZW5kYXJzLlJlYWRXcml0ZSBPbmxpbmVNZWV0aW5ncy5SZWFkV3JpdGUgb3BlbmlkIHByb2ZpbGUgVXNlci5SZWFkIGVtYWlsIiwic3ViIjoia3lVdjJKWFZOdExGQkcwUU9tVkszVGpZUlNicTNUSkRjUVZ3MTBwSmRvbyIsInRlbmFudF9yZWdpb25fc2NvcGUiOiJOQSIsInRpZCI6ImQ5MTRmYTVjLTA3NjAtNDYwZC1hMDU2LWFjOGE3N2E4N2ZkYSIsInVuaXF1ZV9uYW1lIjoiYWRtaW5ATW5nRW52TUNBUDEzNjc0Mi5vbm1pY3Jvc29mdC5jb20iLCJ1cG4iOiJhZG1pbkBNbmdFbnZNQ0FQMTM2NzQyLm9ubWljcm9zb2Z0LmNvbSIsInV0aSI6IjAyWktNNklpWUU2MzRad1JjenMzQUEiLCJ2ZXIiOiIxLjAiLCJ3aWRzIjpbIjYyZTkwMzk0LTY5ZjUtNDIzNy05MTkwLTAxMjE3NzE0NWUxMCIsImI3OWZiZjRkLTNlZjktNDY4OS04MTQzLTc2YjE5NGU4NTUwOSJdLCJ4bXNfY2MiOlsiQ1AxIl0sInhtc19zc20iOiIxIiwieG1zX3N0Ijp7InN1YiI6Ikl4MjNSN0JqaExiS290TURHUVhLMUstenU2bW9NSW5KZG1pajZCdzhQMXcifSwieG1zX3RjZHQiOjE2OTIzNjExMDl9.rvR3B4n6B6llos7pdzjMkG1-r0_ybD9r6x0kovNb8-83qS6skmckO2AYEiZ62YZCuKsKy6B98kk3EUmM8N3YIJ-v4CiUnjTJow8xlBmf8VPd4A-l0yy9QaHztWAW9XjBh3jow2xteSyVjMB7Vo1z7AjrW3GPrmF8PRCrYrJ5ckVvYhm2cVwlOOwHWHVLvc1DTl5c5qXDAxJaXm51EBGL70MLx7YJv12MCxyOzk0e0oblBNLCjJISiX3HaG-RRhyx40jANMXe_wLBbXC6MuZga2aAsQex2kWdlrRF2gmPvVhKXgaWMzk-F1C60DKmBYN_Gc0QDAvOM62mbLr29CVbrw";
         }
 
         public void EmailUser(InterviewProfiles profile)
@@ -42,6 +47,13 @@ namespace AHAApi.Helper
                 emailDetails.EmailId = profile.CandidateEmailId ?? string.Empty;
                 emailDetails.SchedulingUrl = "https://ahaastorage.z20.web.core.windows.net/candidate/slot/" + profile.Id;
             }
+            else if (!string.IsNullOrEmpty(profile.CandidateSelectedSlot) && (!string.IsNullOrEmpty(profile.InterviewSlot1) || !string.IsNullOrEmpty(profile.InterviewSlot2) || !string.IsNullOrEmpty(profile.InterviewSlot3)))
+            {
+                emailDetails.ToBeInterviewScheduled = true;
+                emailDetails.EmailId = profile.CandidateEmailId ?? string.Empty;
+                emailDetails.InterviewerEmailId = profile.InterviewerEmailId ?? string.Empty;
+                emailDetails.CandidateSelectedSlot = profile.CandidateSelectedSlot ?? string.Empty;
+            }
 
             SendEmail(emailDetails).Wait();
         }
@@ -64,6 +76,10 @@ namespace AHAApi.Helper
                                         <p>Regards,<br>AHAA-AI Hire Assistance Team</p>";
 
             }
+            else if (emailDetails.ToBeInterviewScheduled)
+            {
+                emailDetails.EmailSubject = "Interview scheduled" + " | Job title: " + emailDetails.JobTitle;
+            }
             else
             {
                 emailDetails.EmailSubject = "Select the preferred slot for interview | Job title: " + emailDetails.JobTitle;
@@ -78,8 +94,191 @@ namespace AHAApi.Helper
                                         <p>Regards,<br>AHAA-AI Hire Assistance Team</p>";
             }
 
-            string emailJson = FormEmailJson(emailDetails);
-            await CallEmailApi(emailJson);
+            if (emailDetails.ToBeInterviewScheduled)
+            {
+                await ScheduleInterview(emailDetails);
+            }
+            else
+            {
+                string emailJson = FormEmailJson(emailDetails);
+                await CallEmailApi(emailJson);
+            }
+        }
+
+        private async Task ScheduleInterview(EmailDetails emailDetails)
+        {
+            string joinUrl = string.Empty;
+            string jobTitle = emailDetails.JobTitle;
+
+            // Create a MeetingPayload object
+            MeetingPayload payload = new MeetingPayload
+            {
+                subject = "Interview scheduled | Job title: " + jobTitle,
+                recordAutomatically = true,
+                allowTranscription = true
+            };
+
+            // Serialize the object to JSON
+            string jsonString = JsonConvert.SerializeObject(payload);
+
+            // Create an instance of HttpClient
+            using (var httpClient = new HttpClient())
+            {
+                // Set the base URL for Microsoft Graph API
+                httpClient.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
+
+                // Set the authorization header with the access token
+                httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", accessTokenOnlineMeeting);
+
+                // Set the content type header
+                httpClient.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // Create a StringContent with the JSON payload
+                var content = new StringContent(jsonString);
+
+                // Set the content type for the request
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                // Make an HTTP POST request to create the online meeting
+                HttpResponseMessage response = await httpClient.PostAsync("me/onlineMeetings", content);
+
+                // Check if the request was successful (status code 201)
+                if (response.IsSuccessStatusCode)
+                {
+                    // Parse and handle the response if needed
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    var data = (JObject)JsonConvert.DeserializeObject(responseBody);
+                    joinUrl = data.SelectToken(
+                       "joinUrl").Value<string>();
+                    Console.WriteLine("Online meeting created successfully.");
+                }
+                else
+                {
+                    // Handle the error response if the request fails
+                    Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(joinUrl))
+            {
+                string endDateTime = string.Empty;
+                // Define variables for datetime, timezone, subject, URL, and email addresses
+                string startDateTime = emailDetails.CandidateSelectedSlot;
+                // Parse the input string to a DateTime object (assuming it's in a specific format)
+                if (DateTime.TryParse(startDateTime, out DateTime utcDateTime))
+                {
+                    // Define the target time zone offset for UTC+5.30 (India Standard Time)
+                    TimeSpan targetTimeZoneOffset = TimeSpan.FromHours(5.5); // 5 hours and 30 minutes
+
+                    // Apply the target time zone offset to the UTC datetime
+                    DateTime targetDateTime = utcDateTime + targetTimeZoneOffset;
+
+                    // Format the targetDateTime as a string in the desired format
+                    startDateTime = targetDateTime.ToString("yyyy-MM-ddTHH:mm:ss");
+                    // Add one hour to the selectedDateTime
+                    DateTime oneHourLater = targetDateTime.AddHours(1);
+                    endDateTime = oneHourLater.ToString("yyyy-MM-ddTHH:mm:ss");
+
+                }
+
+                string timeZone = "Asia/Kolkata";
+                string teamsMeetingUrl = joinUrl ?? string.Empty;
+                string emailAddress1 = emailDetails.InterviewerEmailId;
+                string name1 = emailDetails.InterviewerName;
+                string emailAddress2 = emailDetails.EmailId;
+                string name2 = emailDetails.CandidateName;
+                string emailAddress3 = "shahanshahnayyar@outlook.com";
+                string name3 = "AHAA-AI Hire Assistant";
+
+                // Define the JSON payload for creating the event with variables
+                // Define the JSON payload for creating the event with variables
+                string eventPayload = $@"
+{{
+    ""subject"": ""{emailDetails.EmailSubject}"",
+    ""start"": {{
+        ""dateTime"": ""{startDateTime}"",
+        ""timeZone"": ""{timeZone}""
+    }},
+    ""end"": {{
+        ""dateTime"": ""{endDateTime}"",
+        ""timeZone"": ""{timeZone}""
+    }},
+    ""location"": {{
+        ""displayName"": ""AHAA- Interview""
+    }},
+    ""body"": {{
+        ""contentType"": ""HTML"",
+        ""content"": ""<p>Hi,</p><p>Please click below link to join the interview</p><p><a href='{teamsMeetingUrl}'>Click here to join the interview</a></p>
+                                        <p>Candidate Name: {emailDetails.CandidateName} </p>
+                                        <p>Job Id: {emailDetails.JobId} </p>
+                                        <p>Job Title: {emailDetails.JobTitle} </p>
+                                        <p>Job Description: {emailDetails.JobDescription} </p>
+                                        <p>Regards,<br>AHAA-AI Hire Assistance Team</p>""
+    }},
+    ""attendees"": [
+        {{
+            ""emailAddress"": {{
+                ""address"": ""{emailAddress1}"",
+                ""name"": ""{name1}""
+            }},
+            ""type"": ""required""
+        }},
+        {{
+            ""emailAddress"": {{
+                ""address"": ""{emailAddress2}"",
+                ""name"": ""{name2}""
+            }},
+            ""type"": ""required""
+        }},
+        {{
+            ""emailAddress"": {{
+                ""address"": ""{emailAddress3}"",
+                ""name"": ""{name3}""
+            }},
+            ""type"": ""required""
+        }}
+    ]
+}}";
+
+                // Create an instance of HttpClient
+                using (var httpClient = new HttpClient())
+                {
+                    // Set the base URL for Microsoft Graph API
+                    httpClient.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
+
+                    // Set the authorization header with the access token
+                    httpClient.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    // Set the content type header
+                    httpClient.DefaultRequestHeaders.Accept.Add(
+                        new MediaTypeWithQualityHeaderValue("application/json"));
+
+                    // Create a StringContent with the JSON payload
+                    var content = new StringContent(eventPayload);
+
+                    // Set the content type for the request
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                    // Make an HTTP POST request to create the event
+                    HttpResponseMessage response = await httpClient.PostAsync("me/events", content);
+
+                    // Check if the request was successful (status code 201)
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // Parse and handle the response if needed
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine("Event created successfully.");
+                    }
+                    else
+                    {
+                        // Handle the error response if the request fails
+                        Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                    }
+                }
+            }
         }
 
         private string FormEmailJson(EmailDetails emailDetails)
