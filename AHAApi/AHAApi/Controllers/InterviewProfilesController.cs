@@ -47,7 +47,7 @@ namespace AHAApi.Controllers
         public async Task<ActionResult<IEnumerable<InterviewProfiles>>> Update(InterviewProfiles profile)
         {
             await _repository.UpdateAsync(profile);
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            ////await Task.Delay(TimeSpan.FromSeconds(30));
             EmailHelper emailHelper = new EmailHelper();
             emailHelper.EmailUser(profile);
             return Ok(true);
