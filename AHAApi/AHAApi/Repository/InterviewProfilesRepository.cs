@@ -46,5 +46,11 @@ namespace AHAApi.Repository
             await _collection.DeleteOneAsync(filter);
         }
 
+        public async Task<IList<InterviewProfiles>> GetAllProfilesByJobIdAsync(string jobId)
+        {
+            var filter = Builders<InterviewProfiles>.Filter.Eq(j => j.JobId, jobId);
+            return await _collection.Find(filter).ToListAsync();
+        }
+
     }
 }

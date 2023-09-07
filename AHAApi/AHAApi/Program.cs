@@ -52,7 +52,7 @@ else
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "AHAA-API");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AHAA-API");
     });
 }
 

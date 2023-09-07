@@ -1,5 +1,6 @@
 ﻿using AHAApi.DataModels;
 using AHAApi.Repository.Interfaces;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace AHAApi.Repository
@@ -14,9 +15,10 @@ namespace AHAApi.Repository
         }
 
         // Create a new job application
-        public async Task CreateAsync(JobPosting JobPosting)
+        public async Task<string> CreateAsync(JobPosting JobPosting)
         {
             await _collection.InsertOneAsync(JobPosting);
+            return JobPosting?.Id?.ToString() ?? string.Empty;
         }
 
         // Read a job application by its ID

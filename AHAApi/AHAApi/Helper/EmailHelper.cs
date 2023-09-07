@@ -35,10 +35,12 @@ namespace AHAApi.Helper
             {
                 emailDetails.EmailId = profile.InterviewerEmailId ?? string.Empty;
                 emailDetails.IsRecipientInterviewer = true;
+                emailDetails.SchedulingUrl = "https://ahaastorage.z20.web.core.windows.net/interviewer/availability/" + profile.Id;
             }
             else if (string.IsNullOrEmpty(profile.CandidateSelectedSlot) && (!string.IsNullOrEmpty(profile.InterviewSlot1) || !string.IsNullOrEmpty(profile.InterviewSlot2) || !string.IsNullOrEmpty(profile.InterviewSlot3)))
             {
                 emailDetails.EmailId = profile.CandidateEmailId ?? string.Empty;
+                emailDetails.SchedulingUrl = "https://ahaastorage.z20.web.core.windows.net/candidate/slot/" + profile.Id;
             }
 
             SendEmail(emailDetails).Wait();

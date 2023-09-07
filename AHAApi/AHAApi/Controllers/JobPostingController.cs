@@ -26,14 +26,13 @@ namespace AHAApi.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<bool>> Post(JobPosting profile)
+        public async Task<ActionResult<string>> Post(JobPosting profile)
         {
-            await _repository.CreateAsync(profile);
-            return Ok(true);
+            return Ok(await _repository.CreateAsync(profile));
         }
 
         [HttpGet]
-        [Route("Id")]
+        [Route("{id}")]
         public async Task<ActionResult<JobPosting>> GetById(string id)
         {
             var profile = await _repository.GetByIdAsync(id);

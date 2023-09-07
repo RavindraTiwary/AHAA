@@ -21,7 +21,7 @@ namespace AHAApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<InterviewProfiles>>> GetAll()
         {
-            var profile = await _repository.GetAllAsync();
+           var profile = await _repository.GetAllAsync();
             return Ok(profile);
         }
 
@@ -29,26 +29,32 @@ namespace AHAApi.Controllers
         public async Task<ActionResult<bool>> Post(InterviewProfiles profile)
         {
             await _repository.CreateAsync(profile);
-            await Task.Delay(TimeSpan.FromSeconds(30));
             EmailHelper emailHelper = new EmailHelper();
             emailHelper.EmailUser(profile);
             return Ok(true);
         }
 
         [HttpGet]
-        [Route("Id")]
+        [Route("{id}")]
         public async Task<ActionResult<InterviewProfiles>> GetById(string id)
         {
             var profile = await _repository.GetByIdAsync(id);
             return Ok(profile);
         }
 
+        [HttpGet]
+        [Route("job/{id}")]
+        public async Task<ActionResult<IList<InterviewProfiles>>> GetByJobId(string id)
+        {
+            var profiles = await _repository.GetAllProfilesByJobIdAsync(id);
+            return Ok(profiles);
+        }
         [HttpPut]
         public async Task<ActionResult<IEnumerable<InterviewProfiles>>> Update(InterviewProfiles profile)
         {
             await _repository.UpdateAsync(profile);
-            await Task.Delay(TimeSpan.FromSeconds(30));
             EmailHelper emailHelper = new EmailHelper();
+            profile.CandidateEmailId = profile.InterviewerEmailId; // remove after demo / until production
             emailHelper.EmailUser(profile);
             return Ok(true);
         }
