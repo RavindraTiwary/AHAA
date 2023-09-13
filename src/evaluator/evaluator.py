@@ -10,16 +10,22 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_DEPLOYMENT_NAME = os.getenv("OPENAI_DEPLOYMENT_NAME")
 
+
 EVALUATION_PROMPT_TEMPLATE = """
 You recently interviewed a candidate for a {role} role {experience_template}. 
 Given the job description and the interview transcript below, 
 {evaluation_template}
 
+Give your output as a json with the keys as "summary" and "evaluation".
+"summary" contains the performance summary of the candidate, and "evaluation" has the keys "technical_fitness", "cultural_fitness", "communication_skills", "track_record", "overall".
+For each of the above evaluation keys, give your score under "score" (out of 5) and the reason for the score under "reason".
+Along with these keys, it should also contain the key "inclusiveness" with the score and reason for the interviewer's inclusiveness.
+
 Job Description: {job_description}
 
 Interview Transcript: {interview_transcript}
 
-Candidate Performance Summary and Evaluation:"""
+Candidate Performance Summary and Evaluation:<json>"""
 
 
 def evaluate(
@@ -134,7 +140,8 @@ if __name__ == "__main__":
     evaluation_template = """
     1. Summarize the performance of the candidate
     2. Evaluate the candidate along with a score on 5
-    on 4 dimensions - technical fitness, cultural fitness, communication skills and track record and overall."""
+    on 4 dimensions - technical fitness, cultural fitness, communication skills and track record and overall.
+    For the interviewer, give a score out of 5, to assess how well the interviewer performed on inclusiveness."""
 
     response = evaluate(
         role=role,
