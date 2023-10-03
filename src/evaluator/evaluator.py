@@ -5,6 +5,7 @@ from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.llms import AzureOpenAI, OpenAI
 from langchain.prompts import PromptTemplate
+from timestamp_removal import load_docx, merge_pages, remove_timestamps
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -12,9 +13,11 @@ OPENAI_DEPLOYMENT_NAME = os.getenv("OPENAI_DEPLOYMENT_NAME")
 
 
 EVALUATION_PROMPT_TEMPLATE = """
-You recently interviewed a candidate for a {role} role {experience_template}. 
+You recently interviewed a candidate for a technical interview.
 Given the job description and the interview transcript below, 
 {evaluation_template}
+
+Microsoft is an equal opportunity employer. All qualified applicants will receive consideration for employment without regard to age, ancestry, color, family or medical care leave, gender identity or expression, genetic information, marital status, medical condition, national origin, physical or mental disability, political affiliation, protected veteran status, race, religion, sex (including pregnancy), sexual orientation, or any other characteristic protected by applicable laws, regulations and ordinances.  We also consider qualified applicants regardless of criminal histories, consistent with legal requirements.
 
 Give your output as a json with the keys as "summary" and "evaluation".
 "summary" contains the performance summary of the candidate, and "evaluation" has the keys "technical_fitness", "cultural_fitness", "communication_skills", "track_record", "overall".
@@ -29,8 +32,6 @@ Candidate Performance Summary and Evaluation:<json>"""
 
 
 def evaluate(
-    role,
-    experience_template,
     evaluation_template,
     job_description,
     interview_transcript,
@@ -44,8 +45,6 @@ def evaluate(
 
     evaluation_prompt_template = PromptTemplate(
         input_variables=[
-            "role",
-            "experience_template",
             "evaluation_template",
             "job_description",
             "interview_transcript",
@@ -59,8 +58,6 @@ def evaluate(
     )
     response = evaluation_chain.run(
         {
-            "role": role,
-            "experience_template": experience_template,
             "evaluation_template": evaluation_template,
             "job_description": job_description,
             "interview_transcript": interview_transcript,
@@ -69,85 +66,96 @@ def evaluate(
     return response
 
 
-if __name__ == "__main__":
-    role = "data scientist"
-    experience_template = "with at least 2 years of experience"
-
+def evaluate_transcript(transcript_file_path, timestamp_pattern = r'\d+:\d+:\d+\.\d+ --> \d+:\d+:\d+\.\d+'):
     job_description = """
-    Job Title: Data Scientist
-    Location: Hyderabad
-    Company: SciData Solutions
-    About Us:
-    SciData Solutions is a leading technology company known for innovation and excellence in data-driven decision-making. We are seeking a talented and experienced Data Scientist to join our dynamic team and help drive our data-driven initiatives. If you are passionate about solving complex problems, have strong technical skills, and excel in client-facing roles, we'd love to hear from you.
-    Position Overview:
-    We are looking for a Data Scientist with a minimum of 2 years of hands-on experience in data analysis, machine learning, and statistical modeling. The ideal candidate will possess a strong skill set in Python, NumPy, Pandas, Scikit Learn, Tensorflow/Pytorch, Matplotlib, and SQL. In addition to technical proficiency, excellent communication skills are essential as this role involves direct interaction with clients. The successful candidate should have a proven track record of completing projects on time, be adept at working both independently and as part of a team, and be proactive in resolving conflicts.
-    Key Responsibilities:
-    • Collaborate with cross-functional teams to understand business objectives and translate them into data-driven solutions.
-    • Collect, preprocess, and analyze large datasets to derive actionable insights and build predictive models.
-    • Develop and deploy machine learning algorithms and models using Python, Tensorflow/Pytorch, and Scikit Learn.
-    • Visualize data and present findings to clients and stakeholders using Matplotlib and other visualization tools.
-    • Write efficient SQL queries to extract and manipulate data from relational databases.
-    • Proactively identify and resolve conflicts or roadblocks in project execution.
-    • Meet project deadlines and ensure high-quality deliverables.
-    • Maintain up-to-date knowledge of industry trends and best practices in data science.
-    Qualifications:
-    • Bachelor's or Master's degree in a related field (e.g., Computer Science, Statistics, Data Science).
-    • Minimum of 2 years of hands-on experience as a Data Scientist.
-    • Strong proficiency in Python, NumPy, Pandas, Scikit Learn, Tensorflow/Pytorch, Matplotlib, and SQL.
-    • Excellent verbal and written communication skills with the ability to explain complex technical concepts to non-technical stakeholders.
-    • Proven ability to work in client-facing roles and maintain positive client relationships.
-    • Track record of completing projects on time and within scope.
-    • Ability to work independently and collaboratively in a team environment.
-    • Strong problem-solving skills and attention to detail.
-    • Proactive attitude and ability to handle conflict resolution effectively.
-    Cultural Fit:
-    As a member of the SciData Solutions team, candidates should align with company's cultural fit, which includes embracing diversity and inclusion, fostering a growth mindset, demonstrating a passion for technology, and exhibiting a commitment to corporate social responsibility.
-    How to Apply:
-    If you are a data enthusiast who thrives in a collaborative environment and meets the qualifications outlined above, we invite you to apply for this exciting opportunity. Please submit your resume, cover letter, and any relevant portfolio or project work to hr@scidatasolutions.com.
-    SciData Solutions is an equal opportunity employer. We celebrate diversity and are committed to creating an inclusive environment for all employees."""
+Job description
 
-    interview_transcript = """
-    Here's an interview transcript for Rahul, the Data Scientist candidate from PyroPulse Analytics, interviewing for the position at SciData Solutions. The transcript includes questions related to Rahul's skills and experience, focusing on his knowledge of PyTorch.
+Requisition ID: 1556538
 
-    ---
+Job Title: Senior Consultant
 
-    **Interviewer (Kumar)**: Good afternoon, Rahul. Thank you for joining us today. To start, could you briefly describe your experience at PyroPulse Analytics and the types of projects you've worked on there?
+Overview:
 
-    **Rahul**: Good afternoon, Kumar. Thank you for having me. At PyroPulse Analytics, I've been primarily involved in data analysis and machine learning projects. I've worked on projects related to customer segmentation, churn prediction, and recommendation systems using Python, Pandas, NumPy, and Scikit Learn.
+Microsoft Industry Solution - India Global Delivery Center (IGDC) delivers end-to-end solutions by enabling accelerated adoption and productive use of Microsoft technologies. An organization of well over 1000+ exceptional people, IGDC presents a great opportunity for highly skilled services professionals to make a foray into consulting, solution development and delivery roles. The ideal consultant is passionate for technology, has the breadth rather than specific product depth, and has the drive and courage to articulate and stand up for a 
+great solution delivering true value for the client. 
 
-    **Interviewer (Kumar)**: I noticed on your resume that you have experience with PyTorch. Could you tell me about a specific project where you applied PyTorch and neural networks?
+  
 
-    **Rahul**: Certainly, Kumar. I worked on a project to build a sentiment analysis model for customer reviews using PyTorch. We used a recurrent neural network (RNN) architecture for this task. The model performed well in sentiment classification, achieving an accuracy of around 85%.
+As a Microsoft consultant, you will deliver quality engagements with your expertise, either as an advisor, reviewer, contributor, or resource in high profile projects to ensure customer value. The ideal candidate must have the ability to combine their technical skills, leadership skills, creativity, and customer focus to deliver great 
+solutions to the customers and ensure they get the best out of our technologies and solutions. Consulting Delivery professionals bring subject matter and solution expertise to architectural teams, customers, and partners. They apply deep technical and business knowledge to accelerate the adoption of Microsoft devices and services by ensuring strategic, architectural, and operational alignment to customer and partner objectives.  
 
-    **Interviewer (Kumar)**: That's interesting. Can you explain how the RNN architecture works and why it was chosen for sentiment analysis?
+Job qualifications:
 
-    **Rahul**: Of course. RNNs are a type of neural network designed for sequential data, such as text. They work by maintaining a hidden state that captures information from previous time steps. This makes them well-suited for tasks where the order of data matters, like sentiment analysis, where the sentiment of a word often depends on the context of the previous words.
+10+ years of experience 
+Customer facing Project delivery leadership experience involving solution design, project envisioning, planning, development and deployment of complex solutions with minimum of 5 plus years. 
+Bachelor’s Degree in Computer Science Engineering or equivalent work experience. Higher relevant education preferred. 
+Technical certifications are a plus (MCSD/MCAD/MCSE/AZ-204) 
 
-    **Interviewer (Kumar)**: In the job description, we mentioned that we're looking for candidates with strong knowledge in PyTorch and neural networks. Can you tell me about some challenges you faced while working on the sentiment analysis project?
+ 
 
-    **Rahul**: Well, to be honest, while I was able to implement the RNN for the project, I faced challenges when it came to hyperparameter tuning and optimizing the model for better performance. It's an area I'm actively working on improving.
+Microsoft is an equal opportunity employer. All qualified applicants will receive consideration for employment without regard to age, ancestry, color, family or medical care leave, gender identity or expression, genetic information, marital status, medical condition, national origin, physical or mental disability, political affiliation, protected veteran status, race, religion, sex (including pregnancy), sexual orientation, or any other characteristic protected by applicable laws, regulations and ordinances.  We also consider qualified applicants regardless of criminal histories, consistent with legal requirements. If you need assistance and/or a reasonable accommodation due to a disability during the application or the recruiting process, please send a request via the Accommodation request form.
 
-    **Interviewer (Kumar)**: Thank you for your honesty, Rahul. It's important to acknowledge areas for growth. Moving on, could you share an example of a project where you had to work in a team and how you handled conflicts or challenges that arose during the project?
+ 
 
-    **Rahul**: Certainly. In a previous project at PyroPulse, our team had a disagreement about the choice of machine learning algorithm to use. Some team members favored decision trees, while others preferred neural networks. I facilitated a discussion, and we decided to try both approaches and compare their performance. It turned out to be a valuable learning experience, as we could objectively assess the strengths and weaknesses of each method.
+Benefits/perks listed below may vary depending on the nature of your employment with Microsoft and the country where you work.
 
-    **Interviewer (Kumar)**: Finally, how do you think your experience aligns with SciData Solutions' culture of embracing diversity, fostering a growth mindset, and demonstrating a passion for technology?
+Job responsibilities:
 
-    **Rahul**: I believe my diverse project experience and my commitment to continuous learning align well with SciData Solutions' cultural values. I'm always eager to explore new technologies and improve my skills, which I believe is essential in the ever-evolving field of data science.
+ 
 
-    **Interviewer (Kumar)**: Thank you, Rahul, for sharing your experiences and insights. We appreciate your time today."""
+Works as a Individual contributor or Leads the engineering team and provides accurate time estimates, sets work priorities, and makes project changes and trade-offs necessary for a successful release.  
+Applies technical experience and industry-specific knowledge to develop solutions, based on an analysis of how the proposed approach affects the business objectives of customers and partners. 
+Works to accelerate the value proposition of customer or partner engagements by helping to design, develop, and deploy solutions, based on Microsoft technologies and methodologies. 
+Applies information-compliance and assurance policies to ensure stakeholder confidence. 
+Responsible for the overall efficacy and quality of a project team’s technical delivery within his or her engagements. 
+Defines dependencies and risks that go beyond the immediate scope and timeframe for a complex project. Develops contingency plans, risk-mitigation implementation criteria, and alternative strategies to manage short- and long-term risks and manages technical escalations. 
+Identifies a best practice approach for a project, across a wide scope of technical issues, and develops or reuses intellectual capital with customers, world-wide, and for programs and initiatives across Microsoft. 
+Drives opportunities to expand or accelerate the adoption and consumption of the cloud and Microsoft technologies.  Collaborates, as appropriate, with peers and other teams (e.g., Sales, account-aligned team) to scale the business with existing high-stake or strategic customers, by articulating/developing value propositions of strategic Microsoft products and services.  
+Drives innovation and digital transformation. Ensures the use of the existing intellectual property (IP) and improves predictability. 
+Defines the technology strategy for large and complex engagements, so that customers or partners realize the full value of investment. Responsible for implementing the technology strategy.  
+Drives new ways of thinking, across the division and subsidiary, to improve quality, engineering productivity, and responsiveness to feedback and changing priorities. 
+
+ 
+
+AREAS OF EXPERTISE:
+
+ 
+
+.NET Tools and Technologies – experience of leveraging the same and designing, implementing, and deploying Business Mission Critical applications. 
+Expertise in leading and delivering digital transformation projects. 
+Exceptional coding abilities and experience with architectural patterns for large, high-scale applications on cloud platforms with focus on performance and resiliency. 
+Extensive experience in implementing, operating, customizing, tuning and troubleshooting large-scale Cloud solutions.   
+Full-stack developer with experience at many layers of the tech stack (native, web, service, UX, model, data) and good proficiency in one or more of C#, JavaScript, Typescript, AngularJS/ReactJS, HTML5, CSS/SCSS. 
+Proven experience in creating reusable framework for application development addressing cross-cutting concerns. 
+Excellence in software engineering practices, coding and solid foundation in data structures, algorithms with strong testing, debugging and analytical skills.  
+Hands on experience with multi-threaded/parallel programming, Application design patterns, and anti-patterns, such as MVC, CQRS and/or SAGA   
+Hands on experience with Application monitoring and end to end telemetry in the cloud. 
+Proficient with one or more Cloud Databases such as Azure SQL, Azure Database for PostgreSQL, MySQL, and MariaDB   
+Hands on experience in implementing micro-services architecture using technologies such as Kubernetes, Service Fabric, Cloud Foundry, Azure Functions  
+Defining CI/CD pipelines to automate test and release across different application environments using concepts such as Blue/Green and Canary deployments and related technologies.  
+Expertise in security controls such as encryption, AuthN/AuthZ  
+Experience in Open-source technologies and frameworks are an added plus.   
+Prior experience in Cloud migration, Java, AWS or Google cloud is a definite plus. 
+Industry knowledge in one or more of the following industries: automotive, energy, travel and transportation, financial services, government, health, manufacturing, media & communications, or retail/supply chain.    """
+
+    interview_transcript = remove_timestamps(transcript_file_path, transcript_file_path, timestamp_pattern, replace_multiple_newlines_whitespaces=True, load_n_merge=True)
 
     evaluation_template = """
-    1. Summarize the performance of the candidate
+    1. Summarize the performance of the candidate including candidate's name.
     2. Evaluate the candidate along with a score on 5
-    on 4 dimensions - technical fitness, cultural fitness, communication skills and track record and overall.
-    For the interviewer, give a score out of 5, to assess how well the interviewer performed on inclusiveness."""
+    on 4 dimensions - technical fitness based on the skillset mentioned in the Job Description, cultural fitness, communication skills and track record and overall.
+
+    For the interviewer, give a score out of 5, to assess how well the interviewer performed on inclusiveness.
+    
+    Also provide a good description to justify your rating of the candidate. You should be aggressive with the rating criteria for the candidate."""
 
     response = evaluate(
-        role=role,
-        experience_template=experience_template,
         evaluation_template=evaluation_template,
         job_description=job_description,
         interview_transcript=interview_transcript,
     )
     print(response)
+
+if __name__ == "__main__":
+    transcript_file_path = r"C:\Users\nkothapalli\Downloads\Part 2-R1+R2 - Ratnesh Dixit - Interview Request - Senior Consultant (1556538) - September 29th, 2023_2023-09-29 (1).docx"
+    evaluate_transcript(transcript_file_path)
