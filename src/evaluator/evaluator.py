@@ -1,5 +1,5 @@
 import os
-
+import tiktoken
 from dotenv import load_dotenv
 from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
@@ -15,7 +15,7 @@ OPENAI_DEPLOYMENT_NAME = os.getenv("OPENAI_DEPLOYMENT_NAME")
 EVALUATION_PROMPT_TEMPLATE = """
 You recently interviewed a candidate for a technical interview.
 Given the job description and the interview transcript below, 
-{evaluation_template}
+```{evaluation_template}```
 
 Microsoft is an equal opportunity employer. All qualified applicants will receive consideration for employment without regard to age, ancestry, color, family or medical care leave, gender identity or expression, genetic information, marital status, medical condition, national origin, physical or mental disability, political affiliation, protected veteran status, race, religion, sex (including pregnancy), sexual orientation, or any other characteristic protected by applicable laws, regulations and ordinances.  We also consider qualified applicants regardless of criminal histories, consistent with legal requirements.
 
@@ -24,12 +24,18 @@ Give your output as a json with the keys as "summary" and "evaluation".
 For each of the above evaluation keys, give your score under "score" (out of 5) and the reason for the score under "reason".
 Along with these keys, it should also contain the key "inclusiveness" with the score and reason for the interviewer's inclusiveness.
 
-Job Description: {job_description}
+Job Description: ```{job_description}```
 
-Interview Transcript: {interview_transcript}
+Interview Transcript: ```{interview_transcript}```
 
 Candidate Performance Summary and Evaluation:<json>"""
 
+def validate_token_size(text: str, token_limit: int = 8192):
+    tokenizer = tiktoken.get_encoding("cl100k_base")
+    n_tokens = len(tokenizer.encode(text))
+    print("Total number of tokens:", n_tokens)
+    if n_tokens > token_limit:
+        print("Document is exceeding token limit")
 
 def evaluate(
     evaluation_template,
@@ -51,7 +57,8 @@ def evaluate(
         ],
         template=EVALUATION_PROMPT_TEMPLATE,
     )
-
+    evaluation_prompt = evaluation_prompt_template.format(evaluation_template=evaluation_template, job_description=job_description, interview_transcript=interview_transcript)
+    validate_token_size(evaluation_prompt)
     evaluation_chain = LLMChain(
         llm=llm,
         prompt=evaluation_prompt_template,
@@ -141,13 +148,20 @@ Industry knowledge in one or more of the following industries: automotive, energ
     interview_transcript = remove_timestamps(transcript_file_path, transcript_file_path, timestamp_pattern, replace_multiple_newlines_whitespaces=True, load_n_merge=True)
 
     evaluation_template = """
-    1. Summarize the performance of the candidate including candidate's name.
-    2. Evaluate the candidate along with a score on 5
-    on 4 dimensions - technical fitness based on the skillset mentioned in the Job Description, cultural fitness, communication skills and track record and overall.
+1. Summarize the performance of the candidate including candidate's name.
+2. Evaluate the candidate along with a score on 5
+on 4 dimensions - technical fitness based on the skillset mentioned in the Job Description, cultural fitness, communication skills and track record and overall.
 
-    For the interviewer, give a score out of 5, to assess how well the interviewer performed on inclusiveness.
-    
-    Also provide a good description to justify your rating of the candidate. You should be aggressive with the rating criteria for the candidate."""
+Also provide a good description to justify your rating of the candidate. The summary has to be comprehensive with the asks in the job description. You should be aggressive with the summary and the rating criteria and the evaluation of the candidate.
+You have to call a spade a spade. 
+You should deduce based on the conversation, but not on what he/she claims they know. 
+If you say they are good at something, they should be very strong in all the areas for that particular skill.
+There should be minimum 12 sentences in the summary. You should justify your rating by giving relevant examples. 
+
+There should be at least 5 sentences for evaluation of each of the rating criteria and they have to be comprehensive with the respective criteria as well.
+If something is not present, don't make up. Just call it out.
+
+For the interviewer, give a score out of 5, to assess how well the interviewer performed on inclusiveness."""
 
     response = evaluate(
         evaluation_template=evaluation_template,

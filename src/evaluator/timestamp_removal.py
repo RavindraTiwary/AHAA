@@ -46,4 +46,6 @@ if __name__=="__main__":
     timestamp_pattern = r'\d+:\d+:\d+\.\d+ --> \d+:\d+:\d+\.\d+'
     text = load_docx(file_path)
     text = merge_pages(text)
-    print(remove_timestamps(text.page_content, timestamp_pattern, replace_multiple_newlines_whitespaces=True))
+    cleaned_text = remove_timestamps(text.page_content, timestamp_pattern=timestamp_pattern, replace_multiple_newlines_whitespaces=True, load_n_merge=False)
+    with open("cleaned_text.txt", "w") as f:
+        f.write(cleaned_text)
